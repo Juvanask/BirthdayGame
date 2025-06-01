@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat-Man Adventure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            background: black;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #2c3e50;
+            padding: 20px;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .maze {
+            display: grid;
+            grid-template-columns: repeat(19, 1fr);
+            grid-template-rows: repeat(19, 1fr);
+            gap: 1px;
+            background: #0f1419;
+            border: 3px solid #1e3a8a;
+            border-radius: 16px;
+            padding: 8px;
+            box-shadow: 0 0 25px rgba(30, 58, 138, 0.6);
+            width: min(500px, 90vw);
+            height: min(500px, 90vw);
+        }
+
+        .cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-width: 0;
+            min-height: 0;
+        }
+
+        .wall {
+            background: linear-gradient(145deg, #1e40af, #1e3a8a);
+            border: 1px solid #3730a3;
+            border-radius: 3px;
+            box-shadow:
+                0 0 8px rgba(59, 130, 246, 0.4),
+                inset 0 1px 0 rgba(147, 197, 253, 0.3),
+                inset 0 -1px 0 rgba(30, 58, 138, 0.5);
+        }
+
+        .path {
+            background: #0f1419;
+            border-radius: 2px;
+        }
+
+        .dot {
+            background: #ffff00;
+            border-radius: 50%;
+            width: 4px;
+            height: 4px;
+            box-shadow: 0 0 8px rgba(255, 255, 0, 0.8);
+            animation: dotGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes dotGlow {
+            0% { box-shadow: 0 0 8px rgba(255, 255, 0, 0.8); }
+            100% { box-shadow: 0 0 12px rgba(255, 255, 0, 1); }
+        }
+
+        .big-dot {
+            background: #ffff00;
+            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+            box-shadow: 0 0 12px rgba(255, 255, 0, 0.9);
+            animation: bigDotPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes bigDotPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 12px rgba(255, 255, 0, 0.9); }
+            50% { transform: scale(1.3); box-shadow: 0 0 16px rgba(255, 255, 0, 1); }
+        }
+
+        .cat {
+            font-size: clamp(16px, 2.5vw, 20px);
+            position: relative;
+            z-index: 10;
+            color: #ff6b6b;
+            animation: catBounce 0.6s ease-in-out infinite alternate;
+        }
+
+        @keyframes catBounce {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-1px); }
+        }
+
+        .ghost {
+            font-size: clamp(12px, 2vw, 16px);
+            position: relative;
+            z-index: 9;
+        }
+
+        .scared-ghost {
+            animation: scaredShake 0.2s ease-in-out infinite;
+        }
+
+        @keyframes scaredShake {
+            0%, 100% { transform: translateX(0px); }
+            50% { transform: translateX(-1px); }
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 16px;
+            width: 280px;
+            height: 200px;
+            background: black;
+            padding: 20px;
+            border-radius: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #1e293b, #334155);
+            color: white;
+            border: 2px solid #475569;
+            border-radius: 0px;
+            cursor: pointer;
+            font-weight: 900;
+            font-size: 24px;
+            line-height: 1;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow:
+                0 4px 8px rgba(30, 41, 59, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(148, 163, 184, 0.2), rgba(203, 213, 225, 0.1));
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            border-radius: 0px;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #334155, #475569);
+            border-color: #64748b;
+            transform: translateY(-3px);
+            box-shadow:
+                0 12px 20px rgba(30, 41, 59, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .btn:hover::before {
+            opacity: 1;
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+            box-shadow:
+                0 4px 8px rgba(30, 41, 59, 0.3),
+                inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-up { grid-column: 2; grid-row: 1; }
+        .btn-left { grid-column: 1; grid-row: 2; }
+        .btn-right { grid-column: 3; grid-row: 2; }
+        .btn-down { grid-column: 2; grid-row: 3; }
+
+        .message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            font-size: 14px;
+            max-width: 90%;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .game-over-content {
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .mac-window {
+            background: #f5f5f7;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .window-header {
+            background: linear-gradient(180deg, #e5e5e7, #d1d1d6);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #c7c7cc;
+        }
+
+        .window-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-buttons div {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .btn-close { background: #ff5f57; }
+        .btn-minimize { background: #ffbd2e; }
+        .btn-maximize { background: #28ca42; }
+
+        .window-title {
+            flex: 1;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1d1d1f;
+            margin-left: -60px;
+        }
+
+        .window-content {
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .note {
+            background: #fff9e6;
+            color: #8b4513;
+            padding: 30px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 500;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            border: 1px solid #f4d03f;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .restart-btn {
+            background: linear-gradient(145deg, #f59e0b, #d97706);
+            color: white;
+            border: 2px solid #b45309;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            margin-top: 20px;
+        }
+
+        .restart-btn:hover {
+            background: linear-gradient(145deg, #d97706, #b45309);
+            border-color: #92400e;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(245, 158, 11, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+                gap: 20px;
+            }
+
+            .controls {
+                width: 240px;
+                height: 160px;
+                gap: 12px;
+                padding: 16px;
+            }
+
+            .btn {
+                font-size: 24px;
+            }
+
+            .maze {
+                width: min(400px, 85vw);
+                height: min(400px, 85vw);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="maze" id="maze"></div>
+
+        <div class="controls">
+            <button class="btn btn-up" onclick="movePlayer('up')">▲</button>
+            <button class="btn btn-left" onclick="movePlayer('left')">◀</button>
+            <div></div>
+            <button class="btn btn-right" onclick="movePlayer('right')">▶</button>
+            <button class="btn btn-down" onclick="movePlayer('down')">▼</button>
+        </div>
+
+        <div class="message" id="message"></div>
+    </div>
+
+    <div class="game-over" id="game-over">
+        <div class="game-over-content" id="game-over-content">
+            <div class="mac-window">
+                <div class="window-header">
+                    <div class="window-buttons">
+                        <div class="btn-close"></div>
+                        <div class="btn-minimize"></div>
+                        <div class="btn-maximize"></div>
+                    </div>
+                    <div class="window-title">Birthday Note</div>
+                </div>
+                <div class="window-content">
+                    <div class="note">
+                        🎂 Happy Birthday! 🎂<br>
+                        Made this so you can keep it 💕
+                    </div>
+                    <button class="restart-btn" onclick="resetGame()">Play Again</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MAZE_WIDTH = 19;
+        const MAZE_HEIGHT = 19;
+
+        const mazeLayout = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
+            [1,3,1,1,1,2,1,1,1,1,1,1,1,2,1,1,1,3,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,1,2,1,2,1,1,1,2,1,2,1,1,1,2,1],
+            [1,2,2,2,2,2,1,2,2,1,2,2,1,2,2,2,2,2,1],
+            [1,1,1,1,1,2,1,1,0,1,0,1,1,2,1,1,1,1,1],
+            [0,0,0,0,1,2,1,0,0,0,0,0,1,2,1,0,0,0,0],
+            [1,1,1,1,1,2,1,0,1,0,1,0,1,2,1,1,1,1,1],
+            [0,0,0,0,0,2,0,0,1,0,1,0,0,2,0,0,0,0,0],
+            [1,1,1,1,1,2,1,0,1,1,1,0,1,2,1,1,1,1,1],
+            [0,0,0,0,1,2,1,0,0,0,0,0,1,2,1,0,0,0,0],
+            [1,1,1,1,1,2,1,1,0,1,0,1,1,2,1,1,1,1,1],
+            [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,1,2,1,1,1,1,1,1,1,2,1,1,1,2,1],
+            [1,3,2,1,2,2,2,2,2,2,2,2,2,2,2,1,2,3,1],
+            [1,1,2,1,2,1,2,1,1,1,1,1,2,1,2,1,2,1,1],
+            [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        let gameState = {
+            playerPos: {x: 9, y: 15},
+            ghosts: [
+                {x: 9, y: 9, emoji: '🐕', scared: false, direction: 'up'},
+                {x: 8, y: 9, emoji: '🐕‍🦺', scared: false, direction: 'left'},
+                {x: 10, y: 9, emoji: '🦮', scared: false, direction: 'right'}
+            ],
+            dotsRemaining: 0,
+            powerMode: false,
+            powerModeTimer: 0,
+            gameRunning: true
+        };
+
+        let maze = [];
+        let ghostMoveTimer = 0;
+        let gameInterval;
+
+        function initMaze() {
+            maze = JSON.parse(JSON.stringify(mazeLayout));
+            gameState.dotsRemaining = 0;
+
+            for (let y = 0; y < MAZE_HEIGHT; y++) {
+                for (let x = 0; x < MAZE_WIDTH; x++) {
+                    if (maze[y][x] === 2 || maze[y][x] === 3) {
+                        gameState.dotsRemaining++;
+                    }
+                }
+            }
+        }
+
+        function renderMaze() {
+            const mazeElement = document.getElementById('maze');
+            mazeElement.innerHTML = '';
+
+            for (let y = 0; y < MAZE_HEIGHT; y++) {
+                for (let x = 0; x < MAZE_WIDTH; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+
+                    if (maze[y][x] === 1) {
+                        cell.classList.add('wall');
+                    } else {
+                        cell.classList.add('path');
+
+                        if (maze[y][x] === 2) {
+                            const dot = document.createElement('div');
+                            dot.className = 'dot';
+                            cell.appendChild(dot);
+                        } else if (maze[y][x] === 3) {
+                            const bigDot = document.createElement('div');
+                            bigDot.className = 'big-dot';
+                            cell.appendChild(bigDot);
+                        }
+                    }
+
+                    if (x === gameState.playerPos.x && y === gameState.playerPos.y) {
+                        const cat = document.createElement('div');
+                        cat.className = 'cat';
+                        cat.innerHTML = '🐱';
+                        cell.appendChild(cat);
+                    }
+
+                    gameState.ghosts.forEach(ghost => {
+                        if (x === ghost.x && y === ghost.y) {
+                            const ghostElement = document.createElement('div');
+                            ghostElement.className = 'ghost';
+                            if (ghost.scared) {
+                                ghostElement.classList.add('scared-ghost');
+                                ghostElement.textContent = '😵‍💫';
+                            } else {
+                                ghostElement.textContent = ghost.emoji;
+                            }
+                            cell.appendChild(ghostElement);
+                        }
+                    });
+
+                    mazeElement.appendChild(cell);
+                }
+            }
+        }
+
+        function startGameLoop() {
+            gameInterval = setInterval(() => {
+                ghostMoveTimer++;
+                if (ghostMoveTimer >= 2) {
+                    moveGhosts();
+                    ghostMoveTimer = 0;
+                }
+            }, 250);
+        }
+
+        function movePlayer(direction) {
+            if (!gameState.gameRunning) return;
+
+            let newX = gameState.playerPos.x;
+            let newY = gameState.playerPos.y;
+
+            switch(direction) {
+                case 'up': newY--; break;
+                case 'down': newY++; break;
+                case 'left': newX--; break;
+                case 'right': newX++; break;
+            }
+
+            if (newX < 0 || newX >= MAZE_WIDTH || newY < 0 || newY >= MAZE_HEIGHT) return;
+            if (maze[newY][newX] === 1) return;
+
+            gameState.playerPos.x = newX;
+            gameState.playerPos.y = newY;
+
+            if (maze[newY][newX] === 2) {
+                maze[newY][newX] = 0;
+                gameState.dotsRemaining--;
+                showMessage('🐟 Yummy fish!');
+            } else if (maze[newY][newX] === 3) {
+                maze[newY][newX] = 0;
+                gameState.dotsRemaining--;
+                gameState.powerMode = true;
+                gameState.powerModeTimer = 100;
+                gameState.ghosts.forEach(ghost => ghost.scared = true);
+                showMessage('💖 Power up! Dogs are scared!');
+            }
+
+            if (gameState.dotsRemaining === 0) {
+                levelComplete();
+                return;
+            }
+
+            checkCollisions();
+            renderMaze();
+        }
+
+        function moveGhosts() {
+            if (!gameState.gameRunning) return;
+
+            gameState.ghosts.forEach(ghost => {
+                const possibleMoves = [];
+                const directions = [
+                    {dir: 'up', x: ghost.x, y: ghost.y - 1},
+                    {dir: 'down', x: ghost.x, y: ghost.y + 1},
+                    {dir: 'left', x: ghost.x - 1, y: ghost.y},
+                    {dir: 'right', x: ghost.x + 1, y: ghost.y}
+                ];
+
+                directions.forEach(move => {
+                    if (move.x >= 0 && move.x < MAZE_WIDTH &&
+                        move.y >= 0 && move.y < MAZE_HEIGHT &&
+                        maze[move.y][move.x] !== 1) {
+                        possibleMoves.push(move);
+                    }
+                });
+
+                if (possibleMoves.length > 0) {
+                    let chosenMove;
+
+                    if (ghost.scared) {
+                        const playerDist = possibleMoves.map(move => {
+                            const dx = move.x - gameState.playerPos.x;
+                            const dy = move.y - gameState.playerPos.y;
+                            return {move, dist: Math.abs(dx) + Math.abs(dy)};
+                        });
+                        playerDist.sort((a, b) => b.dist - a.dist);
+                        chosenMove = playerDist[0].move;
+                    } else {
+                        if (Math.random() < 0.6) {
+                            const playerDist = possibleMoves.map(move => {
+                                const dx = move.x - gameState.playerPos.x;
+                                const dy = move.y - gameState.playerPos.y;
+                                return {move, dist: Math.abs(dx) + Math.abs(dy)};
+                            });
+                            playerDist.sort((a, b) => a.dist - b.dist);
+                            chosenMove = playerDist[0].move;
+                        } else {
+                            chosenMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+                        }
+                    }
+
+                    ghost.x = chosenMove.x;
+                    ghost.y = chosenMove.y;
+                    ghost.direction = chosenMove.dir;
+                }
+            });
+
+            if (gameState.powerMode) {
+                gameState.powerModeTimer--;
+                if (gameState.powerModeTimer <= 0) {
+                    gameState.powerMode = false;
+                    gameState.ghosts.forEach(ghost => ghost.scared = false);
+                }
+            }
+
+            checkCollisions();
+            renderMaze();
+        }
+
+        function checkCollisions() {
+            gameState.ghosts.forEach((ghost, index) => {
+                if (ghost.x === gameState.playerPos.x && ghost.y === gameState.playerPos.y) {
+                    if (gameState.powerMode && ghost.scared) {
+                        showMessage('🎉 Caught a dog! They ran away!');
+                        ghost.x = 9;
+                        ghost.y = 9;
+                        ghost.scared = false;
+                    } else if (!ghost.scared) {
+                        showMessage('💔 Oops! The dogs are friendly though!');
+                        resetPositions();
+                    }
+                }
+            });
+        }
+
+        function resetPositions() {
+            gameState.playerPos = {x: 9, y: 15};
+            gameState.ghosts = [
+                {x: 9, y: 9, emoji: '🐕', scared: false, direction: 'up'},
+                {x: 8, y: 9, emoji: '🐕‍🦺', scared: false, direction: 'left'},
+                {x: 10, y: 9, emoji: '🦮', scared: false, direction: 'right'}
+            ];
+            gameState.powerMode = false;
+            gameState.powerModeTimer = 0;
+        }
+
+        function levelComplete() {
+            gameState.gameRunning = false;
+            clearInterval(gameInterval);
+            showGameOver();
+        }
+
+        function showGameOver() {
+            document.getElementById('game-over').style.display = 'flex';
+        }
+
+        function hideGameOver() {
+            document.getElementById('game-over').style.display = 'none';
+        }
+
+        function resetGame() {
+            if (gameInterval) clearInterval(gameInterval);
+
+            gameState = {
+                playerPos: {x: 9, y: 15},
+                ghosts: [
+                    {x: 9, y: 9, emoji: '🐕', scared: false, direction: 'up'},
+                    {x: 8, y: 9, emoji: '🐕‍🦺', scared: false, direction: 'left'},
+                    {x: 10, y: 9, emoji: '🦮', scared: false, direction: 'right'}
+                ],
+                dotsRemaining: 0,
+                powerMode: false,
+                powerModeTimer: 0,
+                gameRunning: true
+            };
+
+            initMaze();
+            hideGameOver();
+            renderMaze();
+            showMessage('🐱 Collect all the fish! 🐟');
+            startGameLoop();
+        }
+
+        function showMessage(text) {
+            const messageEl = document.getElementById('message');
+            messageEl.innerHTML = text;
+            messageEl.style.display = 'block';
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 2000);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            switch(e.key.toLowerCase()) {
+                case 'arrowup':
+                case 'w':
+                    e.preventDefault();
+                    movePlayer('up');
+                    break;
+                case 'arrowdown':
+                case 's':
+                    e.preventDefault();
+                    movePlayer('down');
+                    break;
+                case 'arrowleft':
+                case 'a':
+                    e.preventDefault();
+                    movePlayer('left');
+                    break;
+                case 'arrowright':
+                case 'd':
+                    e.preventDefault();
+                    movePlayer('right');
+                    break;
+            }
+        });
+
+        // Initialize game
+        initMaze();
+        renderMaze();
+        showMessage('🐱 Collect all the fish! 🐟');
+        startGameLoop();
+    </script>
+</body>
+</html>
