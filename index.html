@@ -230,19 +230,6 @@
         grid-row: 3;
       }
 
-      .message {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 12px 20px;
-        border-radius: 12px;
-        text-align: center;
-        font-weight: 500;
-        display: none;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        font-size: 14px;
-        max-width: 90%;
-      }
-
       .game-over {
         position: fixed;
         top: 0;
@@ -382,8 +369,6 @@
         <button class="btn btn-right" onclick="movePlayer('right')">▶</button>
         <button class="btn btn-down" onclick="movePlayer('down')">▼</button>
       </div>
-
-      <div class="message" id="message"></div>
     </div>
 
     <div class="game-over" id="game-over">
@@ -564,14 +549,12 @@
         if (maze[newY][newX] === 2) {
           maze[newY][newX] = 0;
           gameState.dotsRemaining--;
-          showMessage("🐟 Yummy fish!");
         } else if (maze[newY][newX] === 3) {
           maze[newY][newX] = 0;
           gameState.dotsRemaining--;
           gameState.powerMode = true;
           gameState.powerModeTimer = 100;
           gameState.ghosts.forEach((ghost) => (ghost.scared = true));
-          showMessage("💖 Power up! Dogs are scared!");
         }
 
         if (gameState.dotsRemaining === 0) {
@@ -660,12 +643,10 @@
             ghost.y === gameState.playerPos.y
           ) {
             if (gameState.powerMode && ghost.scared) {
-              showMessage("🎉 Caught a dog! They ran away!");
               ghost.x = 9;
               ghost.y = 9;
               ghost.scared = false;
             } else if (!ghost.scared) {
-              showMessage("💔 Oops! The dogs are friendly though!");
               resetPositions();
             }
           }
@@ -716,17 +697,11 @@
         initMaze();
         hideGameOver();
         renderMaze();
-        showMessage("🐱 Collect all the fish! 🐟");
         startGameLoop();
       }
 
       function showMessage(text) {
-        const messageEl = document.getElementById("message");
-        messageEl.innerHTML = text;
-        messageEl.style.display = "block";
-        setTimeout(() => {
-          messageEl.style.display = "none";
-        }, 2000);
+        // Message function kept but not used
       }
 
       document.addEventListener("keydown", (e) => {
@@ -757,7 +732,6 @@
       // Initialize game
       initMaze();
       renderMaze();
-      showMessage("🐱 Collect all the fish! 🐟");
       startGameLoop();
     </script>
   </body>
